@@ -1,0 +1,11 @@
+venv/
+env/
+ENV/
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+chromedriver*
+geckodriver*
