@@ -2,76 +2,45 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from pages.base_page import BasePage
 
+DEFAULT_TIMEOUT = 10
 
-class LoginPage:
-
-    HOME_PAGE_CONTENT = (By.CSS_SELECTOR, "img[alt='STEAM']")
-    LOGIN_BUTTON = (By.XPATH, "//a[contains(text(), 'вход')]")
-    USERNAME_FIELD = (
-        By.XPATH,
-        "//div[contains(text(), 'имя аккаунта')]/following-sibling::input",
-    )
-    PASSWORD_FIELD = (
-        By.XPATH,
-        "//div[contains(text(), 'Пароль')]/following-sibling::input",
-    )
+class LoginPage(BasePage):
+    PAGE_UNIQUE_ELEMENT = (By.XPATH, "//input[@type='password']")
+    USERNAME_FIELD = (By.XPATH, "//div[contains(text(), 'имя аккаунта')]/following-sibling::input")
+    PASSWORD_FIELD = (By.XPATH, "//div[contains(text(), 'Пароль')]/following-sibling::input")
     SIGN_IN_BUTTON = (By.XPATH, "//button[text()='Войти']")
-    LOADING_INDICATOR = (By.XPATH, "//div[contains(@class, 'VLukpV8')]")
-    ERROR_MESSAGE = (
-        By.XPATH,
-        "//div[contains(text(), 'Пожалуйста, проверьте свой пароль')]",
-    )
+    LOADING_INDICATOR = (By.XPATH, "//button[text()='Войти']/div/div")
+    ERROR_MESSAGE = (By.XPATH, "//form[.//button[@type='submit']]//div[.//button[@type='submit']]/following-sibling::div[1]")
 
     def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)  # 10 секунд ждем по умолчанию
-
-    def open_main_page(self):
-        self.driver.get("https://store.steampowered.com/")
-        self.wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        assert "Steam" in self.driver.title
-
-    def click_login_button(self):
-        login_btn = self.wait.until(EC.element_to_be_clickable(self.LOGIN_BUTTON))
-        login_btn.click()
+        super().__init__(driver)
 
     def enter_credentials(self, username, password):
-        username_input = self.wait.until(
-            EC.visibility_of_element_located(self.USERNAME_FIELD)
-        )
-        username_input.send_keys(username)
-
-        password_input = self.wait.until(
-            EC.visibility_of_element_located(self.PASSWORD_FIELD)
-        )
-        password_input.send_keys(password)
+        self.wait.until(
+            EC.visibility_of_element_located(self.USERNAME_FIELD)).send_keys(
+            username)
+        self.wait.until(
+            EC.visibility_of_element_located(self.PASSWORD_FIELD)).send_keys(
+            password)
 
     def click_sign_in(self):
-        sign_in_btn = self.wait.until(
-            EC.element_to_be_clickable(self.SIGN_IN_BUTTON))
-        sign_in_btn.click()
+        self.wait.until(
+            EC.element_to_be_clickable(self.SIGN_IN_BUTTON)).click()
 
-    def wait_for_loading_indicator(self):
+    def is_loading_indicator_visible(self) -> bool:
         try:
-            self.wait.until(EC.visibility_of_element_located(self.LOADING_INDICATOR))
+            self.wait.until(
+                EC.visibility_of_element_located(self.LOADING_INDICATOR))
             return True
-        except TimeoutException:
+        except Exception:
             return False
 
     def wait_for_loading_to_disappear(self):
-        try:
-            self.wait.until(EC.invisibility_of_element_located(self.LOADING_INDICATOR))
-            return True
-        except TimeoutException:
-            return False
+        self.wait.until_not(
+            EC.visibility_of_element_located(self.LOADING_INDICATOR))
 
     def wait_for_error_message(self):
-        try:
-            error_element = self.wait.until(
-                EC.visibility_of_element_located(self.ERROR_MESSAGE)
-            )
-            error_text = error_element.text
-            return error_text
-        except TimeoutException:
-            return None
+        return self.wait.until(
+            EC.visibility_of_element_located(self.ERROR_MESSAGE)).text
