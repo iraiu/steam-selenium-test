@@ -1,10 +1,6 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 from pages.base_page import BasePage
-
-DEFAULT_TIMEOUT = 10
 
 class LoginPage(BasePage):
     PAGE_UNIQUE_ELEMENT = (By.XPATH, "//input[@type='password']")
@@ -41,6 +37,6 @@ class LoginPage(BasePage):
         self.wait.until_not(
             EC.visibility_of_element_located(self.LOADING_INDICATOR))
 
-    def wait_for_error_message(self):
+    def get_error_message_text(self):
         return self.wait.until(
-            EC.visibility_of_element_located(self.ERROR_MESSAGE)).text
+            EC.presence_of_element_located(self.ERROR_MESSAGE)).text

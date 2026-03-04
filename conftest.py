@@ -4,7 +4,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 from pages.main_page import MainPage
-
+BASE_URL = "https://store.steampowered.com/"
 
 @pytest.fixture
 def driver():
@@ -17,4 +17,7 @@ def driver():
 
 @pytest.fixture
 def main_page(driver):
-    return MainPage(driver)
+    driver.get(BASE_URL)
+    page = MainPage(driver)
+    page.wait_for_open()
+    return page
