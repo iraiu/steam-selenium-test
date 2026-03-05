@@ -8,15 +8,8 @@ from pages.login_page import LoginPage
 
 class MainPage(BasePage):
 
-    PAGE_UNIQUE_ELEMENT = (
-        By.XPATH,
-        "//div[@id='global_header']//a[@data-tooltip-content='.submenu_Store']"
-    )
-
+    PAGE_UNIQUE_ELEMENT = (By.ID, "global_header")
     LOGIN_BUTTON = (By.XPATH, "//div[@id='global_action_menu']//a[contains(@href,'/login/')]")
-
-    def __init__(self, driver):
-        super().__init__(driver)
 
     def click_login_button(self):
         self.wait.until(EC.element_to_be_clickable(self.LOGIN_BUTTON)).click()

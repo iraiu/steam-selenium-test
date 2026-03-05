@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from pages.base_page import BasePage
+from selenium.common.exceptions import TimeoutException
 
 class LoginPage(BasePage):
     PAGE_UNIQUE_ELEMENT = (By.XPATH, "//input[@type='password']")
@@ -9,9 +10,6 @@ class LoginPage(BasePage):
     SIGN_IN_BUTTON = (By.XPATH, "//button[text()='Войти']")
     LOADING_INDICATOR = (By.XPATH, "//button[text()='Войти']/div/div")
     ERROR_MESSAGE = (By.XPATH, "//form[.//button[@type='submit']]//div[.//button[@type='submit']]/following-sibling::div[1]")
-
-    def __init__(self, driver):
-        super().__init__(driver)
 
     def enter_credentials(self, username, password):
         self.wait.until(
@@ -30,7 +28,7 @@ class LoginPage(BasePage):
             self.wait.until(
                 EC.visibility_of_element_located(self.LOADING_INDICATOR))
             return True
-        except Exception:
+        except TimeoutException:
             return False
 
     def wait_for_loading_to_disappear(self):
