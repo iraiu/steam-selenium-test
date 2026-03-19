@@ -35,7 +35,6 @@ class SearchPage(BasePage):
         return sort_value_elements[0].get_attribute("value")
 
     def set_sort_by_price_desc(self):
-        # 1. сохраняем первую строку ДО сортировки
         first_row_before = self.wait.until(
             EC.presence_of_element_located(self.RESULT_ROWS)
         )
