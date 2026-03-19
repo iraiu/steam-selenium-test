@@ -4,21 +4,23 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 class BrowserSingleton:
+    _instance = None
     _driver = None
 
-    @classmethod
-    def get_driver(cls):
-        if cls._driver is None:
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def get_driver(self):
+        if self._driver is None:
             service = Service(ChromeDriverManager().install())
             options = webdriver.ChromeOptions()
             options.add_argument("--start-maximized")
+            self._driver = webdriver.Chrome(service=service, options=options)
+        return self._driver
 
-            cls._driver = webdriver.Chrome(service=service, options=options)
-
-        return cls._driver
-
-    @classmethod
-    def quit_driver(cls):
-        if cls._driver is not None:
-            cls._driver.quit()
-            cls._driver = None
+    def quit_driver(self):
+        if self._driver is not None:
+            self._driver.quit()
+            self._driver = None

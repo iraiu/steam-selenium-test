@@ -1,0 +1,5 @@
+{
+  "base_url": "https://store.steampowered.com/",
+  "timeout": 10,
+  "browser": "chrome"
+}

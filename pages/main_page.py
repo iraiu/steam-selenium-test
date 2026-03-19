@@ -10,21 +10,22 @@ class MainPage(BasePage):
 
     SEARCH_FIELD = (
         By.XPATH,
-        "//form[@role='search' and contains(@action,'store.steampowered.com/search')]//input[@name='term' and @type='text']"
-    )
+        "//form[@role='search' and contains(@action,"
+        "'store.steampowered.com/search')]//input[@name='term' and @type='text']")
 
-    ADVANCED_SEARCH_BUTTON = (
+    SEARCH_BUTTON = (
         By.XPATH,
-        "//a[contains(@href,'/search/?term=') and contains(@href,'advancedsearch')]"
+        "//form[@role='search' and contains(@action,'store.steampowered.com/search')]"
+        "//button[@type='submit']"
     )
 
-    def open_advanced_search(self):
+    def search(self, query: str):
         self.wait.until(
-            EC.element_to_be_clickable(self.SEARCH_FIELD)
-        ).click()
+            EC.visibility_of_element_located(self.SEARCH_FIELD)
+        ).send_keys(query)
 
         self.wait.until(
-            EC.element_to_be_clickable(self.ADVANCED_SEARCH_BUTTON)
+            EC.element_to_be_clickable(self.SEARCH_BUTTON)
         ).click()
 
         search_page = SearchPage(self.driver)

@@ -1,20 +1,10 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-
 from pages.base_page import BasePage
 
 
 class SearchPage(BasePage):
     PAGE_UNIQUE_ELEMENT = (By.ID, "search_results")
-
-    SEARCH_FIELD = (By.ID, "term")
-    REAL_TERM_FIELD = (By.ID, "realterm")
-
-    SEARCH_BUTTON = (
-        By.XPATH,
-        "//div[contains(@class,'searchbar_left')]//button[@type='submit']"
-    )
 
     SORT_DROPDOWN_TRIGGER = (By.ID, "sort_by_trigger")
     PRICE_DESC_OPTION = (By.ID, "Price_DESC")
@@ -33,49 +23,20 @@ class SearchPage(BasePage):
 
     ROW_PRICE = (
         By.XPATH,
-        ".//div[contains(@class,'search_price_discount_combined')]"
+        ".//div[@data-price-final]"
     )
 
-    def search_for_game(self, game_name):
-        search_field = self.wait.until(
-            EC.element_to_be_clickable(self.SEARCH_FIELD)
-        )
-        search_field.click()
+    def get_current_sort_value(self):
+        sort_value_elements = self.driver.find_elements(*self.SORT_BY_VALUE)
 
-        self.driver.execute_script(
-            """
-            const visible = document.getElementById('term');
-            const hidden = document.getElementById('realterm');
+        if not sort_value_elements:
+            return None
 
-            visible.value = arguments[0];
-            hidden.value = arguments[0];
-
-            visible.dispatchEvent(new Event('input', { bubbles: true }));
-            visible.dispatchEvent(new Event('change', { bubbles: true }));
-            """,
-            game_name
-        )
-
-        self.wait.until(
-            EC.element_to_be_clickable(self.SEARCH_BUTTON)
-        ).click()
-
-        self.wait.until(
-            EC.invisibility_of_element_located(self.RESULTS_LOADING)
-        )
-
-        # Берём самое длинное слово запроса, чтобы не ловить мусор вроде "the"
-        query_token = max(game_name.lower().split(), key=len)
-
-        self.wait.until(
-            lambda driver: any(
-                query_token in row.find_element(*self.ROW_TITLE).text.lower()
-                for row in driver.find_elements(*self.RESULT_ROWS)[:20]
-            )
-        )
+        return sort_value_elements[0].get_attribute("value")
 
     def set_sort_by_price_desc(self):
-        first_row_before_sort = self.wait.until(
+        # 1. сохраняем первую строку ДО сортировки
+        first_row_before = self.wait.until(
             EC.presence_of_element_located(self.RESULT_ROWS)
         )
 
@@ -83,26 +44,24 @@ class SearchPage(BasePage):
             EC.element_to_be_clickable(self.SORT_DROPDOWN_TRIGGER)
         ).click()
 
-        self.wait.until(
+        price_desc_option = self.wait.until(
             EC.element_to_be_clickable(self.PRICE_DESC_OPTION)
-        ).click()
-
-        self.wait.until(
-            lambda driver: driver.find_element(*self.SORT_BY_VALUE).get_attribute("value") == "Price_DESC"
         )
 
-        self.wait.until(
-            EC.staleness_of(first_row_before_sort)
+        self.driver.execute_script(
+            "arguments[0].click();",
+            price_desc_option
         )
 
+        self.wait.until(self._sort_value_is_price_desc)
+
         self.wait.until(
-            EC.invisibility_of_element_located(self.RESULTS_LOADING)
+            EC.staleness_of(first_row_before)
         )
 
         self.wait.until(
             EC.presence_of_all_elements_located(self.RESULT_ROWS)
         )
-
     def get_first_n_prices(self, n):
         rows = self.wait.until(
             EC.presence_of_all_elements_located(self.RESULT_ROWS)
@@ -111,26 +70,26 @@ class SearchPage(BasePage):
         prices = []
 
         for row in rows:
-            try:
-                price_element = row.find_element(*self.ROW_PRICE)
-                price_value = price_element.get_attribute("data-price-final")
+            price_element = row.find_element(*self.ROW_PRICE)
+            price_value = price_element.get_attribute("data-price-final")
 
-                if price_value is None or price_value == "":
-                    continue
-
-                price = int(price_value)
-
-                if price > 0:
-                    prices.append(price)
-
-            except NoSuchElementException:
+            if not price_value:
                 continue
+
+            price = int(price_value)
+
+            if price > 0:
+                 prices.append(price)
 
             if len(prices) == n:
                 break
 
         return prices
 
-    @staticmethod
-    def are_prices_sorted_desc(prices):
-        return prices == sorted(prices, reverse=True)
+    def _sort_value_is_price_desc(self, driver):
+        sort_value_elements = driver.find_elements(*self.SORT_BY_VALUE)
+
+        if not sort_value_elements:
+            return False
+
+        return sort_value_elements[0].get_attribute("value") == "Price_DESC"

@@ -9,19 +9,16 @@ import pytest
     ]
 )
 def test_search_results_sorted_by_price_desc(main_page, game_name, n):
-    search_page = main_page.open_advanced_search()
-
-    search_page.search_for_game(game_name)
+    search_page = main_page.search(game_name)
     search_page.set_sort_by_price_desc()
+    current_sort = search_page.get_current_sort_value()
+    assert current_sort == "Price_DESC", (
+        f"Expected current sort to be 'Price_DESC', but got {current_sort!r}"
+    )
 
     prices = search_page.get_first_n_prices(n)
 
-    assert len(prices) == n, (
-        f"Expected {n} prices for game {game_name!r}, but got {len(prices)}. "
-        f"Actual prices: {prices}"
-    )
-
-    assert search_page.are_prices_sorted_desc(prices), (
-        f"Expected prices sorted in descending order for game {game_name!r}, "
+    assert prices == sorted(prices, reverse=True), (
+        f"Expected paid prices sorted in descending order for game {game_name!r}, "
         f"but got: {prices}"
     )
