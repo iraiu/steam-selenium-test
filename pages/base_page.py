@@ -3,12 +3,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from utils.config_reader import ConfigReader
 
 class BasePage:
-
     PAGE_UNIQUE_ELEMENT = None
 
     def __init__(self, driver):
         self.driver = driver
         timeout = ConfigReader.get("timeout")
+
+        if timeout is None:
+            timeout = 10
+
         self.wait = WebDriverWait(driver, timeout)
 
     def wait_for_open(self):

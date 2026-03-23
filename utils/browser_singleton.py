@@ -4,23 +4,30 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 class BrowserSingleton:
-    _instance = None
     _driver = None
+    _language = None
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    @classmethod
+    def set_language(cls, language):
+        cls._language = language
 
-    def get_driver(self):
-        if self._driver is None:
+    @classmethod
+    def get_driver(cls):
+        if cls._driver is None:
             service = Service(ChromeDriverManager().install())
             options = webdriver.ChromeOptions()
             options.add_argument("--start-maximized")
-            self._driver = webdriver.Chrome(service=service, options=options)
-        return self._driver
+            options.add_argument("--disable-notifications")
 
-    def quit_driver(self):
-        if self._driver is not None:
-            self._driver.quit()
-            self._driver = None
+            if cls._language:
+                options.add_argument(f"--lang={cls._language}")
+
+            cls._driver = webdriver.Chrome(service=service, options=options)
+        return cls._driver
+
+    @classmethod
+    def quit_driver(cls):
+        if cls._driver:
+            cls._driver.quit()
+            cls._driver = None
+            cls._language = None
