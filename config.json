@@ -1,0 +1,16 @@
+{
+  "base_url": "https://store.steampowered.com/",
+  "timeout": 10,
+  "browser": {
+    "maximized": true,
+    "headless": false,
+    "incognito": false,
+    "disable_notifications": true,
+    "language": "ru-RU",
+    "additional_args": [
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage"
+    ]
+  }
+}
