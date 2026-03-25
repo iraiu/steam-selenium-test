@@ -7,7 +7,6 @@
     "incognito": false,
     "disable_notifications": true,
     "language": "ru-RU",
-    "implicitly_wait": 10,
     "additional_args": [
       "--disable-gpu",
       "--no-sandbox",

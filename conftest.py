@@ -2,6 +2,7 @@ import pytest
 from enum import StrEnum
 from utils.config_reader import ConfigReader
 from utils.browser_singleton import BrowserSingleton
+from pages.main_page import MainPage
 
 
 class Language(StrEnum):
@@ -10,14 +11,6 @@ class Language(StrEnum):
 
     @property
     def locale(self):
-        locales = {
-            "ru": "ru-RU",
-            "en": "en-US"
-        }
-        return locales[self.value]
-
-    @property
-    def url_param(self):
         return self.value
 
 
@@ -39,15 +32,17 @@ def language(request):
 
 @pytest.fixture
 def driver(language):
-    BrowserSingleton.set_language(language.locale)
-    driver = BrowserSingleton.get_driver()
+    browser = BrowserSingleton()  # получаем экземпляр синглтона
+    browser.set_language(language.locale)
+    driver = browser.get_driver()
     yield driver
-    BrowserSingleton.quit_driver()
+    browser.quit_driver()
 
 
 @pytest.fixture
-def main_page(driver, language):
+def main_page(driver):
     base_url = ConfigReader.get("base_url")
     driver.get(base_url)
-    from pages.main_page import MainPage
-    return MainPage(driver)
+    page = MainPage()
+    page.wait_for_open()
+    return page

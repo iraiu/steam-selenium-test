@@ -1,6 +1,5 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-
 from pages.base_page import BasePage
 from pages.search_page import SearchPage
 
@@ -19,6 +18,9 @@ class MainPage(BasePage):
         "//button[@type='submit']"
     )
 
+    def __init__(self):
+        super().__init__()  # инициализирует self.driver и self.wait
+
     def search(self, query: str):
         self.wait.until(
             EC.visibility_of_element_located(self.SEARCH_FIELD)
@@ -28,6 +30,6 @@ class MainPage(BasePage):
             EC.element_to_be_clickable(self.SEARCH_BUTTON)
         ).click()
 
-        search_page = SearchPage(self.driver)
+        search_page = SearchPage()
         search_page.wait_for_open()
         return search_page

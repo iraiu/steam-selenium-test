@@ -1,8 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from pages.base_page import BasePage
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 
 
 class SearchPage(BasePage):
@@ -17,19 +16,21 @@ class SearchPage(BasePage):
     )
     ROW_TITLE = (
         By.XPATH,
-        ".//span[@class='title']"
+        ".//span[contains(@class, 'title')]"
     )
     ROW_PRICE = (
         By.XPATH,
-        ".//span[contains(@class, 'title')]"
+        ".//div[@data-price-final]"
     )
 
+    def __init__(self):
+        super().__init__()
+
     def get_current_sort_value(self):
-        wait = WebDriverWait(self.driver, 10)
-        sort_value_element = wait.until(
-            EC.presence_of_element_located(self.SORT_BY_VALUE)
+        sort_value_elements = self.wait.until(
+            EC.presence_of_all_elements_located(self.SORT_BY_VALUE)
         )
-        return sort_value_element.get_attribute("value")
+        return sort_value_elements[0].get_attribute("value")
 
     def set_sort_by_price_desc(self):
         self.wait.until(
@@ -39,59 +40,55 @@ class SearchPage(BasePage):
         price_desc_option = self.wait.until(
             EC.element_to_be_clickable(self.PRICE_DESC_OPTION)
         )
+        price_desc_option.click()
 
-        self.driver.execute_script(
-            "arguments[0].click();",
-            price_desc_option
+        self.wait.until(self._sort_value_is_price_desc())
+
+        try:
+            self.wait.until(
+                EC.visibility_of_element_located(self.RESULTS_LOADING)
+            )
+        except TimeoutException:
+            pass
+
+        self.wait.until(
+            EC.invisibility_of_element_located(self.RESULTS_LOADING)
         )
-
-        self.wait.until(self._sort_value_is_price_desc)
 
         self.wait.until(
             EC.presence_of_all_elements_located(self.RESULT_ROWS)
         )
 
-    def _sort_value_is_price_desc(self, driver):
-        try:
-            sort_value_element = driver.find_element(*self.SORT_BY_VALUE)
-            return sort_value_element.get_attribute("value") == "Price_DESC"
-        except:
-            return False
+    def _sort_value_is_price_desc(self):
+        def predicate(driver):
+            sort_value_elements = driver.find_elements(*self.SORT_BY_VALUE)
+            if not sort_value_elements:
+                return False
+            return sort_value_elements[0].get_attribute(
+                "value") == "Price_DESC"
+
+        return predicate
 
     def get_first_n_prices(self, n):
-        self.wait.until(
-            EC.presence_of_all_elements_located(self.RESULT_ROWS)
-        )
+        def prices_loaded(driver):
+            rows = driver.find_elements(*self.RESULT_ROWS)
+            if len(rows) < n:
+                return None
 
-        prices = []
-        max_attempts = 3
-
-        for attempt in range(max_attempts):
-            try:
-                rows = self.driver.find_elements(*self.RESULT_ROWS)
-
-                for row in rows[:n]:
-                    try:
-                        price_element = row.find_element(*self.ROW_PRICE)
-                        price_value = price_element.get_attribute(
-                            "data-price-final")
-
-                        if price_value and price_value.isdigit():
-                            price = int(price_value)
-                            if price > 0:
-                                prices.append(price)
-                    except StaleElementReferenceException:
-                        prices = []
-                        break
-                    except Exception:
-                        continue
-
-                if prices:
+            prices = []
+            for row in rows:
+                price_elements = row.find_elements(*self.ROW_PRICE)
+                if not price_elements:
+                    continue
+                price_value = price_elements[0].get_attribute(
+                    "data-price-final")
+                if not price_value or not price_value.isdigit():
+                    continue
+                price = int(price_value)
+                if price > 0:
+                    prices.append(price)
+                if len(prices) == n:
                     return prices
+            return None
 
-            except StaleElementReferenceException:
-                if attempt == max_attempts - 1:
-                    raise
-                continue
-
-        return prices
+        return self.wait.until(prices_loaded)
